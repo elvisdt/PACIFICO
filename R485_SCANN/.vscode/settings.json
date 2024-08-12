@@ -1,0 +1,28 @@
+{
+    "C_Cpp.intelliSenseEngine": "default",
+    "idf.adapterTargetName": "esp32s3",
+    "idf.customExtraPaths": "/home/elvis/esp/.espressif/tools/xtensa-esp-elf-gdb/14.2_20240403/xtensa-esp-elf-gdb/bin:/home/elvis/esp/.espressif/tools/riscv32-esp-elf-gdb/14.2_20240403/riscv32-esp-elf-gdb/bin:/home/elvis/esp/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin:/home/elvis/esp/.espressif/tools/riscv32-esp-elf/esp-13.2.0_20230928/riscv32-esp-elf/bin:/home/elvis/esp/.espressif/tools/esp32ulp-elf/2.35_20220830/esp32ulp-elf/bin:/home/elvis/esp/.espressif/tools/cmake/3.24.0/bin:/home/elvis/esp/.espressif/tools/openocd-esp32/v0.12.0-esp32-20240318/openocd-esp32/bin:/home/elvis/esp/.espressif/tools/ninja/1.11.1:/home/elvis/esp/.espressif/tools/esp-rom-elfs/20230320",
+    "idf.customExtraVars": {
+        "OPENOCD_SCRIPTS": "/home/elvis/esp/.espressif/tools/openocd-esp32/v0.12.0-esp32-20240318/openocd-esp32/share/openocd/scripts",
+        "IDF_CCACHE_ENABLE": "1",
+        "ESP_ROM_ELF_DIR": "/home/elvis/esp/.espressif/tools/esp-rom-elfs/20230320/"
+    },
+    "idf.espIdfPath": "/home/elvis/esp/v5.2.2/esp-idf",
+    "idf.openOcdConfigs": [
+        "board/esp32s3-builtin.cfg"
+    ],
+    "idf.port": "/dev/ttyACM0",
+    "idf.pythonBinPath": "/home/elvis/esp/.espressif/python_env/idf5.2_py3.8_env/bin/python",
+    "idf.toolsPath": "/home/elvis/esp/.espressif",
+    "files.associations": {
+        "nvs.h": "c",
+        "esp_spiffs.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "span": "c",
+        "esp_memory_utils.h": "c",
+        "esp_timer.h": "c",
+        "ctype.h": "c"
+    }
+}
