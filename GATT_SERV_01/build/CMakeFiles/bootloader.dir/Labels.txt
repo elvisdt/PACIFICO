@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/CMakeFiles/bootloader
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/CMakeFiles/bootloader.rule
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/CMakeFiles/bootloader-complete.rule
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/elvis/ESP_IDF/PACIFICO/GATT_SERV_01/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

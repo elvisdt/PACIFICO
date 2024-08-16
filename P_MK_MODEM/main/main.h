@@ -28,6 +28,18 @@ typedef struct modem_gsm{
 }modem_gsm_t;
 
 
+typedef struct{
+    uint8_t con;    // 1:Con, 0:Disc
+    uint8_t on_of;  // 1:ON,  0:OFF
+    time_t  date;   // time to ON/OFF
+}dev_state_t;
+
+typedef struct 
+{
+   dev_state_t  tv;
+   dev_state_t  air;
+   dev_state_t  project;
+}ctrl_devices_t;
 
 
 
@@ -55,6 +67,6 @@ int split_and_check_IP(char* cadena, char* ip);
 
 int js_modem_to_str(const modem_gsm_t modem, char* buffer,size_t buffer_size);
 int js_mk115_to_str(MK115_bc_data_t data, char* buffer,size_t buffer_size);
-
+int js_ctrl_dev_to_str(const ctrl_devices_t data, char* buffer,size_t buffer_size);
 
 #endif /*_MAIN_H_*/

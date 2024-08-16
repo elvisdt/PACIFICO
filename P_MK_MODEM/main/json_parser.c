@@ -77,7 +77,7 @@ int js_modem_to_str(const modem_gsm_t modem, char* buffer, size_t buffer_size) {
         return -1;
     }
     cJSON_AddNumberToObject(root, "Volt", (double)(data.voltage/10));
-    cJSON_AddNumberToObject(root, "Amp", data.current);
+    cJSON_AddNumberToObject(root, "mA", data.current);
     cJSON_AddNumberToObject(root, "Pwr", data.power);
     cJSON_AddNumberToObject(root, "Kwh", round((double)data.t_energy_c*1E3/EC_MK)/1E3);
     cJSON_AddNumberToObject(root, "Ss", data.sw_state);
@@ -100,4 +100,50 @@ int js_modem_to_str(const modem_gsm_t modem, char* buffer, size_t buffer_size) {
 
     return 0;
 
+  }
+
+void add_device_state(cJSON *json, const char *name, dev_state_t device) {
+    cJSON *device_json = cJSON_CreateObject();
+    cJSON_AddNumberToObject(device_json, "st", device.con);
+    if (device.con == 1) {
+        cJSON_AddNumberToObject(device_json, "on", device.on_of);
+        cJSON_AddNumberToObject(device_json, "date", (double)device.date);
+    }
+    cJSON_AddItemToObject(json, name, device_json);
+}
+
+
+
+  int js_ctrl_dev_to_str(const ctrl_devices_t data, char* buffer,size_t buffer_size){
+
+        if (buffer == NULL || buffer_size == 0) {
+        //printf("Error: Búfer no válido\n");
+        return -1;
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (root == NULL) {
+        //printf("Error al crear el objeto JSON\n");
+        return -1;
+    }
+
+
+    add_device_state(root, "tv", data.tv);
+    add_device_state(root, "air", data.air);
+    add_device_state(root, "proj", data.project);
+
+    char *json = cJSON_PrintUnformatted(root);
+    if (json == NULL) {
+        printf("Error al imprimir JSON\n");
+        cJSON_Delete(root);
+        return -1;
+    }
+
+    // Copia el JSON al búfer (con límite de tamaño)
+    snprintf(buffer, buffer_size, "%s", json);
+    cJSON_Delete(root);
+    free(json);
+    json = NULL;
+
+    return 0;
   }

@@ -91,7 +91,7 @@ char *buff_aux_main = (char *)aux_buff_mem;
 
 /*---> data structure for modem <---*/
 static modem_gsm_t gb_data_md = {0};
-
+static ctrl_devices_t devices = {0};
 
 static int ret_update_time = 0;
 
@@ -380,6 +380,17 @@ int Send_all_data_mqtt_md()
         ret_check = Modem_Mqtt_Pub(buff_aux_main, topic, strlen(buff_aux_main), mqtt_idx, 0);
         ESP_LOGI("MQTT-MK115", "ret-pubb: 0x%X", ret_check);
         WAIT_S(1);
+
+        devices.tv.con = 1;
+         devices.tv.date = time(NULL);
+        devices.tv.on_of = !devices.tv.on_of ;
+
+        js_ctrl_dev_to_str(devices, buff_aux_main,BUF_SIZE_MD);
+        sprintf(topic, "%s/%s/DEVICES", MASTER_TOPIC_MQTT, gb_data_md.info.imei);
+        ret_check = Modem_Mqtt_Pub(buff_aux_main, topic, strlen(buff_aux_main), mqtt_idx, 0);
+        ESP_LOGI("MQTT-MK115", "ret-pubb: 0x%X", ret_check);
+        WAIT_S(1);
+
 
     }
     // Modem_Mqtt_Disconnect(mqtt_idx);

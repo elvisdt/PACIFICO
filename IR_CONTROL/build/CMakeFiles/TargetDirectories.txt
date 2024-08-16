@@ -548,6 +548,7 @@
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/esp_wifi/CMakeFiles/install.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/esp_wifi/CMakeFiles/install/local.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/esp_wifi/CMakeFiles/install/strip.dir
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/bt/CMakeFiles/__idf_bt.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/bt/CMakeFiles/edit_cache.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/bt/CMakeFiles/rebuild_cache.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/bt/CMakeFiles/list_install_components.dir
@@ -804,6 +805,13 @@
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/wifi_provisioning/CMakeFiles/install.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/wifi_provisioning/CMakeFiles/install/local.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/wifi_provisioning/CMakeFiles/install/strip.dir
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/CMakeFiles/__idf_nimble_peripheral_utils.dir
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/CMakeFiles/edit_cache.dir
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/CMakeFiles/rebuild_cache.dir
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/CMakeFiles/list_install_components.dir
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/CMakeFiles/install.dir
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/CMakeFiles/install/local.dir
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/CMakeFiles/install/strip.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/main/CMakeFiles/__idf_main.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/main/CMakeFiles/edit_cache.dir
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/main/CMakeFiles/rebuild_cache.dir

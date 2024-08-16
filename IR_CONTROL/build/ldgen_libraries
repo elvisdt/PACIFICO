@@ -51,6 +51,7 @@
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/wpa_supplicant/libwpa_supplicant.a
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/esp_coex/libesp_coex.a
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/esp_wifi/libesp_wifi.a
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/bt/libbt.a
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/unity/libunity.a
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/cmock/libcmock.a
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/console/libconsole.a
@@ -79,4 +80,5 @@
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/perfmon/libperfmon.a
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/spiffs/libspiffs.a
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
+/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/libnimble_peripheral_utils.a
 /home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/main/libmain.a

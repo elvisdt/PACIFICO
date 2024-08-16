@@ -534,6 +534,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/nimble_peripheral_utils/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("/home/elvis/ESP_IDF/PACIFICO/IR_CONTROL/build/esp-idf/main/cmake_install.cmake")
 endif()
 
