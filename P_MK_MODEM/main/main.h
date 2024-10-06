@@ -47,6 +47,10 @@ typedef struct
  * 
  **************************************************/
 
+typedef struct {
+    char ip[20];
+    uint16_t port;
+}web_dir_t;
 
 /************************************************
  * FUNCTIONS
@@ -59,7 +63,10 @@ void m_convert_time_to_str( time_t now, char *buffer, size_t buffer_size);
 
 int validarIP(const char* ip);
 char* m_get_esp_rest_reason();
+
+void split_sentence(const char *sentence, const char *word, char *result);
 int split_and_check_IP(char* cadena, char* ip);
+int split_and_check_web(const char *message, web_dir_t *aux_web);
 
 /************************************************
  * JSON PARSER

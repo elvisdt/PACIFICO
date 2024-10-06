@@ -9,13 +9,13 @@
 #include <stdarg.h>
 
 
-#define UDP_CONNECTION
+
 // #define TCP_CONNECTION
 // #define MQTT_CONNECTION
 
 
-//#define APN     "smglobal.entel.pe" //
-#define APN     "airtelwap.es"//"ciot.vodafone.com"
+#define APN     "smglobal.entel.pe" //
+//#define APN     "airtelwap.es"//"ciot.vodafone.com"
 //#define APN     "movistar.pe"//
 
 
@@ -28,7 +28,7 @@
 #define IP_OTA_01      "18.229.227.108"    // franco server
 
 /*-----------------------*/
-#define IP_OTA_02      "34.176.88.28"      // elvis server
+#define IP_OTA_02      "34.176.255.243"//"34.176.88.28"      // elvis server
 #define PORT_OTA_02    65431
 
 /**

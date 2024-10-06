@@ -5,9 +5,9 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-set(PROJECT_VER "1.0.0")  
+set(PROJECT_VER "1.0.1")  
 add_definitions(-DPROJECT_VER="${PROJECT_VER}")
-set(PROJECT_NAME "MK115_PRO")  
+set(PROJECT_NAME "PACIFICO")  
 add_definitions(-DPROJECT_NAME="${PROJECT_NAME}")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

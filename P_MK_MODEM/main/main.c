@@ -30,11 +30,15 @@
 #include "main.h"
 #include "credentials.h"
 #include "EG915_modem.h"
+#include "modem_aux.h"
 #include "ota_modem.h"
 
-#include "gap.h"
-#include "gatt_cli.h"
+//#include "gap.h"
+//#include "gatt_cli.h"
+
 #include "ble_MK115B.h"
+#include "gatt_multi_con.h"
+
 
 /* ota modem librarias */
 #include "crc.h"
@@ -59,9 +63,24 @@
 
 #define MASTER_TOPIC_MQTT "PACIFICO"
 
+
+//------ definitions to nvs -----
+
+
 /***********************************************
- * STRUCTURES
+ * NVS data
  ************************************************/
+#define NAMESPACE_NVS		"storage"
+
+#define KEY_WEB_OTA		    "OTA-W"
+#define KEY_WEB_MQTT		"MQTT-W"
+
+
+nvs_handle_t storage_nvs_handle;
+
+size_t web_ota_size = sizeof(web_dir_t);
+web_dir_t web_ota={.ip  = IP_OTA_02 ,
+                    .port = PORT_OTA_02};
 
 
 
@@ -80,7 +99,7 @@ uint8_t *p_RxModem;
 TaskHandle_t UART_task_handle = NULL;
 TaskHandle_t MAIN_task_handle = NULL;
 TaskHandle_t BLE_Task_handle = NULL;
-TaskHandle_t RS485_Task_handle = NULL;
+
 
 /*---> Data OTA loggin_ota <---*/
 char *loggin_ota;
@@ -118,7 +137,18 @@ uint32_t OTA_md_time = 1;
 
 void main_cfg_parms()
 {
-    // ---> placa negra GPS <--- //
+    // ---> placa FERREYROS <--- //
+    /*
+    modem_gpio.gpio_reset = GPIO_NUM_1;
+    modem_gpio.gpio_pwrkey = GPIO_NUM_2;
+    modem_gpio.gpio_status = GPIO_NUM_8;
+
+    modem_uart.uart_num = UART_NUM_1;
+    modem_uart.baud_rate = 115200;
+    modem_uart.gpio_uart_rx = GPIO_NUM_41;
+    modem_uart.gpio_uart_tx = GPIO_NUM_42;
+    */
+
     modem_gpio.gpio_reset = GPIO_NUM_46;
     modem_gpio.gpio_pwrkey = GPIO_NUM_9;
     modem_gpio.gpio_status = GPIO_NUM_8;
@@ -127,6 +157,20 @@ void main_cfg_parms()
     modem_uart.baud_rate = 115200;
     modem_uart.gpio_uart_rx = GPIO_NUM_17;
     modem_uart.gpio_uart_tx = GPIO_NUM_18;
+
+    
+   // PLACA NEGRA GPS
+   /*
+    modem_gpio.gpio_reset = GPIO_NUM_35;
+    modem_gpio.gpio_pwrkey = GPIO_NUM_48;
+    modem_gpio.gpio_status = GPIO_NUM_42;
+
+
+    modem_uart.uart_num = UART_NUM_2;
+    modem_uart.baud_rate = 115200;
+    modem_uart.gpio_uart_rx = GPIO_NUM_36;
+    modem_uart.gpio_uart_tx = GPIO_NUM_37;
+    */
 };
 
 /**
@@ -138,15 +182,22 @@ int Init_config_modem()
 {
     ESP_LOGW(TAG, "--> INIT CONFIG MODEM <--");
     int state = 0;
-    Modem_reset();
     WAIT_S(10);
+
+    state = Modem_check_AT();
+    if (state != MD_AT_OK) {
+        //Modem_turn_ON(); // Black PCB
+        Modem_reset(); // Only Ferreyros
+    }
+    WAIT_S(5);
     for (size_t i = 0; i < MAX_ATTEMPS; i++)
     {
         WAIT_S(2);
         state = Modem_begin_commands();
         if (state == MD_AT_TIMEOUT)
         {
-            Modem_reset();
+            Modem_reset(); // Only Ferreyros
+            // Modem_turn_ON(); // Black PCB
         }
         else if (state == MD_AT_OK)
         {
@@ -165,7 +216,7 @@ int Active_modem()
     int status = Init_config_modem();
     if (status == MD_CFG_SUCCESS)
     {
-        int status = Modem_get_dev_info(&gb_data_md.info);
+        status = Modem_get_dev_info(&gb_data_md.info);
         if (status == MD_CFG_SUCCESS)
         {
             return MD_CFG_SUCCESS; // FAIL
@@ -187,70 +238,126 @@ void Init_NVS_Keys()
     }
     ESP_ERROR_CHECK(err);
 
-    // nvs_open(NAMESPACE_NVS,NVS_READWRITE,&storage_nvs_handle);
+    err = nvs_open(NAMESPACE_NVS,NVS_READWRITE,&storage_nvs_handle);
+
+
+	// Recuperar estructura ink_list_ble_addr_t
+	err = nvs_get_blob(storage_nvs_handle, KEY_WEB_OTA, &web_ota, &web_ota_size);
+	if(err == ESP_ERR_NVS_NOT_FOUND){
+		memset(&web_ota, 0, sizeof(web_dir_t));
+        memcpy(web_ota.ip, IP_OTA_02, sizeof(web_ota.ip));
+        web_ota.port = PORT_OTA_02;
+		nvs_set_blob(storage_nvs_handle, KEY_WEB_OTA, &web_ota, sizeof(web_dir_t));     
+	}
+
+
 
     ESP_LOGI(TAG, "NVS keys recovered succsesfull\r\n");
     return;
 }
 
 
-int Init_BLE_params()
-{
-    /*------------------------------------------------*/
-    
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    esp_err_t ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        ESP_LOGE(TAG, "%s initialize controller failed: %s", __func__, esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = esp_bluedroid_init();
-    if (ret) {
-        ESP_LOGE(TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = init_gap_client();
-    if (ret){
-        ESP_LOGE(TAG, "%s gap register failed, error code = %x", __func__, ret);
-        return ret;
-    }
-
-    ret =  init_gatt_client();
-    if(ret){
-        ESP_LOGE(TAG, "%s gattc register failed, error code = %x", __func__, ret);
-        return ret;
-    }
-
-    ret = esp_ble_gattc_app_register(PROFILE_A_APP_ID);
-    if (ret){
-        ESP_LOGE(TAG, "%s gattc app register failed, error code = %x", __func__, ret);
-    }
-
-    ret = esp_ble_gatt_set_local_mtu(500);
-    if (ret){
-        ESP_LOGE(TAG, "set local  MTU failed, error code = %x", ret);
-    }
-    return ret;
-}
 /**************************************************************
  *
  **************************************************************/
+void SMS_check(void)
+{
+
+    const char *TAG_SMS = "SMS";
+    ESP_LOGI(TAG_SMS, "----> CHECK SMS <----");
+
+    int ret_sms = 0;
+    uint8_t sms_tmp[1024];
+    char *message = (char *)sms_tmp;
+
+    char phone[20] = {0};
+    char enviar_sms = 0;
+
+    ret_sms = Modem_SMS_Read(message, phone);
+    printf("ret_sms_chek = 0x%X\r\n", ret_sms);
+
+    if (ret_sms == MD_SMS_READ_FOUND)
+    {
+        remove_spaces(message);    // eliminar espacios o saltos de linea
+        str_to_uppercase(message); // convertir todos los mesajes a mayusculas
+        ESP_LOGI(TAG_SMS, "->%s", message);
+        if (strstr(message, "OTA") != NULL)
+        {
+            enviar_sms = 1;
+            if (strstr(message, "OTA,IP,") != NULL)
+            {
+                web_dir_t aux_web;
+                char msg_aux[50];
+
+                split_sentence(message, "OTA,IP,", msg_aux);
+                if (msg_aux[0] != '\0') {
+                    int rr = split_and_check_web(message, &aux_web);
+                    if (rr == 1)
+                    {
+                        memcpy(&web_ota,&aux_web, sizeof(web_dir_t));
+                        
+                        nvs_erase_key(storage_nvs_handle, KEY_WEB_OTA);
+                        nvs_set_blob(storage_nvs_handle, KEY_WEB_OTA, &web_ota, sizeof(web_dir_t));
+                        nvs_commit(storage_nvs_handle); // update chagues
+                        WAIT_S(1);
+                    }
+                }
+            }
+            
+        }
+        else if (strstr(message, "INFO") != NULL)
+        {
+            enviar_sms = 1;
+            ESP_LOGI(TAG_SMS, "Informacion solicitada");
+        }
+        else if (strstr(message, "RESET") != NULL)
+        {
+            ESP_LOGE(TAG_SMS, "Reset solicitado");
+            Modem_turn_OFF();
+            WAIT_S(1);
+            esp_restart();
+        }
+        else
+        {
+            ESP_LOGW(TAG_SMS, "SMS No valido");
+        }
+
+        /*===================================================*/
+       
+        ret_sms = Modem_SMS_delete();
+        ESP_LOGI(TAG_SMS, "delete sms :0x%X", ret_sms);
+    }
+
+    if (enviar_sms)
+    {
+        enviar_sms = 0;
+        memset(message, '\0', strlen(message));
+
+
+        sprintf(message,"IMEI: %s\n"
+                         "ip-mqtt: %s:%u\n"
+                         "ip-ota: %s:%u",
+                         gb_data_md.info.imei,
+                         IP_MQTT,PORT_MQTT,
+                         web_ota.ip, web_ota.port);
+        
+        ret_sms = Modem_SMS_Send(message, phone);
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        ESP_LOGI(TAG_SMS, "send sms status :0x%X", ret_sms);
+        printf("phone:%s\r\n", phone);
+        printf("send:\r\n%s\r\n", message);
+
+        ret_sms = Modem_SMS_delete();
+        ESP_LOGI(TAG_SMS, "delete sms :0x%X", ret_sms);
+    }
+    return;
+}
+
+
+/// @brief Function to check MQTT connection
+/// @param  
+/// @return 
 int CheckRecMqtt(void)
 {
     ESP_LOGI("MAIN-MQTT", "--> Revisando conexion <--");
@@ -321,7 +428,40 @@ int CheckRecMqtt(void)
     return ret_conn;
 }
 
-/** */
+
+/**
+ * @brief Function to check mqtt conection ans subs to topic
+ * */
+int Check_sub_mqtt_ctrl(void)
+{
+    ESP_LOGI("MQTT-CTRL", "<-- Check subs device ctrol-->");
+
+    char topic[60] = {0};
+    sprintf(topic, "%s/%s/CTRL", MASTER_TOPIC_MQTT, gb_data_md.info.imei);
+
+    time(&gb_data_md.time);
+    gb_data_md.signal = Modem_get_signal();
+
+    int ret_check = 0;
+    
+    ret_check = CheckRecMqtt();
+    ESP_LOGI("MQTT-INFO", "ret-conn: 0x%X", ret_check);
+    if (ret_check == MD_MQTT_CONN_OK)
+    {
+        js_modem_to_str(gb_data_md, buff_aux_main, BUF_SIZE_MD);
+        ret_check = Modem_Mqtt_Pub(buff_aux_main, topic, strlen(buff_aux_main), mqtt_idx, 0);
+        ESP_LOGI("MQTT-INFO", "ret-pubb: 0x%X", ret_check);
+        WAIT_S(1);
+    }
+    // Modem_Mqtt_Disconnect(mqtt_idx);
+    return ret_check;
+}
+
+
+
+/**
+ * @brief Function to check mqtt conection and send INFO data
+ * */
 int Send_info_mqtt_md(void)
 {
     ESP_LOGI("MQTT-INFO", "<-- Send device info -->");
@@ -416,6 +556,8 @@ void OTA_Modem_Check(const char *tcp_ip, uint16_t tcp_port)
     esp_log_level_set(TAG_OTA, ESP_LOG_INFO);
     int conn_idTCP = 0;
     ESP_LOGI(TAG_OTA, "==MODEM OTA CHECK ==");
+    ESP_LOGI(TAG_OTA, "IP: %s, %d",tcp_ip, tcp_port);
+
     char buffer[500] = "";
     do
     {
@@ -480,7 +622,7 @@ static void Modem_rx_task(void *pvParameters)
                 uart_read_bytes(modem_uart.uart_num, dtmp, event.size, portMAX_DELAY);
                 p_RxModem = dtmp;
                 rx_modem_ready = 1;
-                // ESP_LOG_BUFFER_HEXDUMP("UART", dtmp, event.size, ESP_LOG_INFO);
+                ESP_LOG_BUFFER_HEXDUMP("UART", dtmp, event.size, ESP_LOG_INFO);
                 //  procesar data
                 break;
             case UART_FIFO_OVF:
@@ -515,7 +657,7 @@ static void GPRS_Wdt_Task(void *pvParameters)
     for (;;)
     {
         watchdog_time = ((pdTICKS_TO_MS(xTaskGetTickCount()) / 1000) - current_time);
-        if (watchdog_time >= 180 && watchdog_en)
+        if (watchdog_time >= 300 && watchdog_en)
         {
             ESP_LOGE("WTD", " moden no respondio por 3 minutos, reiniciando...\r\n");
             vTaskDelete(MAIN_task_handle);
@@ -524,7 +666,7 @@ static void GPRS_Wdt_Task(void *pvParameters)
             esp_restart();
         }
 
-        if (watchdog_en)
+        if (watchdog_en && watchdog_time>30)
         {
             printf("WTD. time pass: %lu sec\r\n", watchdog_time);
         }
@@ -542,31 +684,9 @@ static void GPRS_Wdt_Task(void *pvParameters)
  *=============================================================*/
 
 
-/** ==========================================================
- * RS485 TASK
- * ============================================================*/
-
-static void rs485_read_task(void *pvParameters)
-{
-
-    ESP_LOGI("ICM", "------------INIT ICM TASK-----------------");
-    WAIT_S(2);
-    int ret1 = 0, ret2 = 0;
-    
-  
-#if DBG_RS485_TASK
-    ESP_LOGI("ICM", "read uart 01: %d", ret1);
-    ESP_LOGI("ICM", "read uart 02: %d", ret2);
-#endif
-    WAIT_S(5 * 55);
-    
-
-    vTaskDelete(NULL);
-}
-
 
 /** ==========================================================
- * RS485 TASK
+ * BLE TASK
  * ============================================================*/
 
 static void ble_chek_task(void *pvParameters)
@@ -574,63 +694,60 @@ static void ble_chek_task(void *pvParameters)
 
     ESP_LOGI("BLE", "------------INIT BLE TASK-----------------");
     WAIT_S(2);
-    
-    uint8_t last_state=0;
-    uint16_t count =0;
-    MK115_bc_data_t data_mk115 ={0};
 
-    bool bt_scan_state = bt_gap_get_scann_state();
-    bool bt_con_state =  bt_gap_get_conn_state();
-    if (!bt_scan_state){
-        ble_scanner_start();
-        ESP_LOGI("MAIN", "START SCAN");
-    }
-
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    // MK115_bc_data_t data_mk115 ={0};
+    esp_err_t ret = init_bt_gattc_app();
+    ESP_LOGW("MAIN","STATUS -INIT BLE: %d", ret);
+    time_t time_task_bt,time_send_bt_a = time(NULL);
+    uint16_t count=0;
     while (1){
         
-        bt_scan_state = bt_gap_get_scann_state();
-        bt_con_state =  bt_gap_get_conn_state();
-        printf("\n");
-        ESP_LOGE("MAIN", "STATUS, SCAN: %d, CONN: %d", bt_scan_state,bt_con_state);
-
-        if (bt_scan_state==false && bt_con_state==false){
-            vTaskDelay(pdMS_TO_TICKS(10000));
-            ble_scanner_start();
-            ESP_LOGI("MAIN", "START SCAN");
+        bool bt_conn_a = bt_st_conn_dev_a();
+        bool bt_conn_b = bt_st_conn_dev_b();
+        if(!bt_conn_a || !bt_conn_b){
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            bt_start_scan();
         }
 
         
-        
-        if (bt_con_state){
-            vTaskDelay(pdMS_TO_TICKS(1000));
-            last_state = !last_state;
+        bool bt_serv_a = bt_get_serv_dev_a();
+        bool bt_serv_b = bt_get_serv_dev_b();
 
+        printf("\n");
+        ESP_LOGI("MAIN", "STATUS, CONN A: %d, CONN B: %d", bt_conn_a,bt_conn_b);
+        ESP_LOGI("MAIN", "STATUS, SERV A: %d, SERV B: %d", bt_serv_a,bt_serv_b);
+
+        time(&time_task_bt);
+        if (bt_serv_a && (time_task_bt > time_send_bt_a)){
+
+            time_send_bt_a = time_task_bt + 10;
+            count ++;
             if(count<3){
-                count ++;
                 ESP_LOGE("MAIN", "check ON/OFF: ");
                 uint8_t s_data[] = {0xB0, 0X03, 0x00};
-                gatt_write_bt_data(BT_CHAR_UUID_READ_DEV_INFO,s_data, sizeof(s_data));
+                gatt_write_A_data(BT_A_CHAR_UUID_READ_DEV_INFO,s_data, sizeof(s_data));
                 vTaskDelay(pdMS_TO_TICKS(2000));
             }
             // uint8_t send_data[]={0xB2, 0X03, 0x01, last_state};
             // int bt_wr_state =  gatt_write_bt_data(BT_CHAR_UUID_SET_DEV_PARAM,send_data, sizeof(send_data));
-            
+
             uint8_t send_data[] = {0xB0, 0X08, 0x00};
-            int bt_wr_state =  gatt_write_bt_data(BT_CHAR_UUID_READ_DEV_INFO,send_data, sizeof(send_data));
+            int bt_wr_state =  gatt_write_A_data(BT_A_CHAR_UUID_READ_DEV_INFO,send_data, sizeof(send_data));
             ESP_LOGW(TAG, "RET CHANGUE STATUS : %d\n", bt_wr_state);
             
             // break;
             vTaskDelay(pdMS_TO_TICKS(1000));
             uint8_t send_d1[] = {0xB0, 0X05, 0x00};
-            bt_wr_state =  gatt_write_bt_data(BT_CHAR_UUID_READ_DEV_INFO,send_d1, sizeof(send_d1));
+            bt_wr_state =  gatt_write_A_data(BT_A_CHAR_UUID_READ_DEV_INFO,send_d1, sizeof(send_d1));
             ESP_LOGW(TAG, "RET CHANGUE STATUS : %d\n", bt_wr_state);
             vTaskDelay(pdMS_TO_TICKS(2000));
-
-            mk115_get_copy_data(&data_mk115);
-            print_MK115_bc_data(&data_mk115);
         }
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        
+
+        // mk115_get_copy_data(&data_mk115);
+        // print_MK115_bc_data(&data_mk115);
+        
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
   
     WAIT_S(3);
@@ -656,10 +773,23 @@ static void Main_Task(void *pvParameters)
             printf("Tiempo: %lu\r\n", current_time);
         }
 
+        // check SMS
+        if (current_time%10 == 0)
+        {
+            ESP_LOGI(TAG, "Check SMS ... ");
+            SMS_check();
+            current_time = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+        }
+        
 
         // SEND INFO DATA
-        if ((pdTICKS_TO_MS(xTaskGetTickCount()) / 1000) >= Info_time)
+        if (current_time%60 == 0)
         {
+            ESP_LOGI(TAG, "Check Update MQTT  ctrl... ");
+            // SMS_check();
+            current_time = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
+        }
+        else if ((pdTICKS_TO_MS(xTaskGetTickCount()) / 1000) >= Info_time){
             current_time = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
             Info_time += (uint32_t)delay_info * 60; // cada 1 min
             if (ret_update_time != MD_CFG_SUCCESS)
@@ -680,7 +810,6 @@ static void Main_Task(void *pvParameters)
         if ((pdTICKS_TO_MS(xTaskGetTickCount()) / 1000) >= OTA_md_time)
         {
             current_time = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
-
             //------------------------//
             ctrl_server_ota++;
 
@@ -690,7 +819,7 @@ static void Main_Task(void *pvParameters)
             }
             else
             {
-                OTA_Modem_Check(IP_OTA_02, PORT_OTA_02);
+                OTA_Modem_Check(web_ota.ip, web_ota.port);
             }
 
             printf("OTA CHECK tomo %lu segundos\r\n", (pdTICKS_TO_MS(xTaskGetTickCount()) / 1000 - current_time));
@@ -720,10 +849,11 @@ static void Main_Task(void *pvParameters)
 void app_main(void)
 {
     ESP_LOGW(TAG, "--->> INIT PROJECT <<---");
+    /*
     int ret_main = 0;
-    /*--- Initialize NVS ---*/
+    //--- Initialize NVS ---//
     Init_NVS_Keys();
-    Init_BLE_params();
+    //Init_BLE_params();
 #if DEBUG_OTA_ON
     register_ota_log_level();
 #endif
@@ -734,7 +864,9 @@ void app_main(void)
     if (configured != running)
     {
         ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08lx, but running from offset 0x%08lx",
-                 configured->address, running->address);
+                 configured->address,
+                 running->address);
+        
         ESP_LOGW(TAG, "This can happen if the OTA partition table has been changed, or if the bootloader believes the OTA data is corrupted.");
     }
     else
@@ -751,12 +883,13 @@ void app_main(void)
     WAIT_S(2);
 
     // INIT UART TASK
-    xTaskCreate(Modem_rx_task, "M95_rx_task", 1024 * 10, NULL, configMAX_PRIORITIES - 1, &UART_task_handle); // active service
+    xTaskCreate(Modem_rx_task, "MD_rx_task", 1024 * 10, NULL, configMAX_PRIORITIES - 1, &UART_task_handle); // active service
 
     ret_main = Active_modem();
     if (ret_main != MD_CFG_SUCCESS)
         esp_restart();
 
+    
     ESP_LOGW(TAG, "-->> END CONFIG <<--\n");
     ret_update_time = Modem_update_time(3);
     ESP_LOGI(TAG, "RET update time: %d", ret_update_time);
@@ -790,11 +923,8 @@ void app_main(void)
     Info_time = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000+(uint32_t)delay_info * 10;
     current_time = pdTICKS_TO_MS(xTaskGetTickCount()) / 1000;
 
-    xTaskCreate(ble_chek_task,"ble_task",1024*6,NULL,8, &BLE_Task_handle);
-
+    // xTaskCreate(ble_chek_task,"ble_task",1024*6,NULL,8, &BLE_Task_handle);
     xTaskCreate(Main_Task, "Main_Task", 1024 * 8, NULL, 10, &MAIN_task_handle);
     xTaskCreate(GPRS_Wdt_Task, "Wdt_Task", 1024 * 2, NULL, 11, NULL);
-    xTaskCreate(rs485_read_task, "icm_task", 1024 * 10, NULL, 5, &RS485_Task_handle);
-    
-
+    */
 }

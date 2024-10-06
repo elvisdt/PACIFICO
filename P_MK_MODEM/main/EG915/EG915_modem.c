@@ -129,7 +129,7 @@ int sendAT(char *command, char *ok, char *error, uint32_t timeout, char *respons
 #if DEBUG_MODEM
 	ESP_LOGI("SEND_AT", "%s", command);
 #endif
-
+	uart_flush_input(modem_uart.uart_num);
 	rx_modem_ready = 0;
 	uart_write_bytes(modem_uart.uart_num, (uint8_t *)command, strlen(command));
 
@@ -155,6 +155,7 @@ int sendAT(char *command, char *ok, char *error, uint32_t timeout, char *respons
 
 	if (send_resultado == MD_AT_TIMEOUT)
 	{
+		ESP_LOGE("SEND_AT", "%s",command);
 		ESP_LOGE("RECIB_AT", "TIMEOUT");
 		return send_resultado;
 	}
@@ -247,8 +248,6 @@ int Modem_check_AT()
 {
 	int ret = 0;
 	// ESP_LOGI(TAG, "CHECK COMMAND AT");
-	uart_flush(modem_uart.uart_num);
-
 	WAIT_MS(500);
 	ret = sendAT("AT\r\n", "OK\r\n", "ERROR\r\n", 2000, buff_reciv);
 	WAIT_MS(100);
@@ -296,6 +295,8 @@ void Modem_reset()
 	WAIT_MS(110);
 	gpio_set_level(modem_gpio.gpio_reset, 0);
 	WAIT_MS(2000);
+	// ADITIONAL TIME TO WITE
+	WAIT_S(5);
 }
 
 int Modem_check_uart()
@@ -327,14 +328,16 @@ int Modem_check_uart()
 
 int Modem_begin_commands()
 {
-	WAIT_MS(10);
+	WAIT_MS(5);
 	ESP_LOGI(TAG, "=> CONFIG FIRST AT COMMANDS");
-	uart_flush(modem_uart.uart_num);
-
 	int ret = sendAT("AT\r\n", "OK\r\n", "ERROR\r\n", 5000, buff_reciv);
 	WAIT_MS(200);
 	if (ret != MD_AT_OK)
 		return ret;
+
+	// AT+QDOWNLOAD
+	// ret = sendAT("AT+QDOWNLOAD\r\n", "OK\r\n", "ERROR\r\n", 5000, buff_reciv);
+	// return MD_AT_OK;
 
 	// restablecer parametros de fabrica
 	sendAT("AT&F\r\n", "OK\r\n", "ERROR\r\n", 1000, buff_reciv);
@@ -354,7 +357,11 @@ int Modem_begin_commands()
 		return ret;
 	}
 	ESP_LOGI(TAG,"MODEM CPIN: READY");
-	WAIT_S(5);
+	WAIT_S(10);
+
+	// Signal Quality - .+CSQ: 6,0  muy bajo
+	sendAT("AT+CSQ\r\n", "+CSQ:", "ERROR\r\n", 400, buff_reciv);
+	WAIT_MS(200);
 
 	//--- Operator Selection ---//
 	ret = sendAT("AT+COPS=0\r\n", "OK", "ERROR\r\n", 180000, buff_reciv);

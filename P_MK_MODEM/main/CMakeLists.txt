@@ -14,8 +14,7 @@ set(LIBS_srcs
 
 set(BLE_srcs  
         "BLE/ble_MK115B.c"
-        "BLE/gatt_cli.c"
-        "BLE/gap.c")
+        "BLE/gatt_multi_con.c")
 
 
 set(WIFI_srcs  

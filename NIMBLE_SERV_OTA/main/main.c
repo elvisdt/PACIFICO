@@ -3,10 +3,14 @@
 #include <string.h>
 #include <inttypes.h>
 
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include <esp_event.h>
+
+#include "time.h"
+#include "esp_timer.h"
 
 #include <esp_log.h>
 #include "esp_ota_ops.h"
@@ -424,7 +428,7 @@ void app_main(void)
     static ir_nec_scan_t rec_data_nec={0};
     bt_msg_t msg_bt;
     uint8_t dscan[12];
-
+    time_t t_rep = time(NULL);
 
     while (1)
     {
@@ -466,8 +470,30 @@ void app_main(void)
 
                 default:
                     break;
-                } 
-            }                      
+                }
+            }
+            
+            
+            time_t time_now = time(NULL);
+            if (difftime(time_now,t_rep)>10){
+                t_rep = time_now;
+
+                dscan[0] = BT_N_HEAD;
+                dscan[1] = 0x00;
+                dscan[2] = 0x00;// data len
+
+                dscan[3] = (time_now >> 24) & 0xFF;
+                dscan[7] = (time_now >> 16) & 0xFF;
+                dscan[5] = (time_now >> 8) & 0xFF;
+                dscan[6] = time_now & 0xFF;
+
+                ESP_LOG_BUFFER_HEX(TAG, dscan,11);
+                int rc = cus_nec_gatt_notify_data(dscan, 11);
+                if (rc != 0) {
+                    ESP_LOGE("NEC", "Error sending notification; rc=%d", rc);
+                }
+            }
+                             
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

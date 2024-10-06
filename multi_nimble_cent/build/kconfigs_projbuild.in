@@ -1,0 +1,6 @@
+source "/home/elvis/esp/v5.3/esp-idf/components/bootloader/Kconfig.projbuild"
+source "/home/elvis/esp/v5.3/esp-idf/components/esp_app_format/Kconfig.projbuild"
+source "/home/elvis/esp/v5.3/esp-idf/components/esp_rom/Kconfig.projbuild"
+source "/home/elvis/esp/v5.3/esp-idf/components/esptool_py/Kconfig.projbuild"
+source "/home/elvis/esp/v5.3/esp-idf/components/partition_table/Kconfig.projbuild"
+source "/home/elvis/ESP_IDF/PACIFICO/multi_nimble_cent/main/Kconfig.projbuild"

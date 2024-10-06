@@ -254,8 +254,8 @@ int mk115_parse_data(uint8_t *raw_data, size_t len_data){
     }
     
     uint8_t head = raw_data[0];
-     ESP_LOGI(TAG,"\n");
-    ESP_LOGI(TAG,"============= PARSE DATA =============");
+    ESP_LOGI(TAG,"----------- INIT PARSE DATA -----------");
+
     ESP_LOGE(TAG, "HEAD DATA: %02X", head);
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, raw_data, len_data, ESP_LOG_WARN);
     int ret = 0;
@@ -285,6 +285,7 @@ int mk115_parse_data(uint8_t *raw_data, size_t len_data){
         break;
     }
 
+    ESP_LOGI(TAG,"----------- END PARSE DATA -----------\n");
     return ret;
 }
 
